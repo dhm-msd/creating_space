@@ -27,3 +27,7 @@ The adjacentDimensions is derived from graph theory. See the [adjacency matrix](
 ## Exhaust Pack Type (creatingspace:exhaust_pack_type)
 
 
+## Power Pack Type (creatingspace:power_pack_type)
+
+## Propellant Type (creatingspace:propellant_type)
+
