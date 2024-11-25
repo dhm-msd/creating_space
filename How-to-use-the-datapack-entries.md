@@ -1,7 +1,7 @@
 # Datapack
 
-this mod add folder to the datapack : creatingspace_utilities
+this mod add 2 types of datapack entries :
 
-this folder contain two type of file :
- - tags for dimensions
- - some single file json
+the mass of block
+
+registries entry based on the minecraft API.
