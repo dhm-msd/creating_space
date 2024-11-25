@@ -3,4 +3,4 @@
 
 for Modder : 
 
-- [how to use the datapack](https://github.com/RealAntEngineer/creating_space/wiki/How-to-use-the-datapack-entries)
+- [how to use the datapack api](https://github.com/RealAntEngineer/creating_space/wiki/How-to-use-the-datapack-entries)
