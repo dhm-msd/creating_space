@@ -22,3 +22,8 @@ very important : the namespace:path correspond to the name of the dimension.
 ```
 The adjacentDimensions is derived from graph theory. See the [adjacency matrix](https://en.wikipedia.org/wiki/Adjacency_matrix) and [adjacency list](https://en.wikipedia.org/wiki/Adjacency_list) wikipedia page.
 
+
+
+## Exhaust Pack Type (creatingspace:exhaust_pack_type)
+
+
