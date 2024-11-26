@@ -25,9 +25,28 @@ The adjacentDimensions is derived from graph theory. See the [adjacency matrix](
 
 
 ## Exhaust Pack Type (creatingspace:exhaust_pack_type)
-
+it's used in the crafting of rocket engines
 
 ## Power Pack Type (creatingspace:power_pack_type)
+it's used in the crafting of rocket engines
 
 ## Propellant Type (creatingspace:propellant_type)
 
+it's the property of a mix of fuels. Very important, it's the mix of liquids not the liquid in itself.
+
+```
+{
+  "propellantRatio": {
+    "creatingspace:liquid_oxygen": 2,
+    "creatingspace:liquid_methane": 1
+  },
+  "maxIsp": 460,
+  "Cp": 4500,
+  "gamma": 1.1,
+  "M": 18
+}
+```
+
+The propellant ratio is used to caculate the ratio of consumption of fuels. The resource location point to a fluid tag, not a fluid. The number is normalised at reading time, so for this example it will be converted to 0.66 for liquid oxygen and 0.33 for liquid methane.
+
+The max ISP is the maximum ISP atanable with this propellant, it's also used to calculate the temperature in the combustion chamber : it's equivalent to the enregy density of the mix.
