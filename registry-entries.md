@@ -37,6 +37,8 @@ exemple :
     "creatingspace:lh2lox"
   ]
 }
+
+the min and max of Expansion ratio are the one used in the rocket engineer table. Don't use values inferior or equal to 1 for the minimum. It would cause division per 0.
 ```
 
 ## Power Pack Type (creatingspace:power_pack_type)
@@ -52,6 +54,8 @@ exemple :
     "creatingspace:lh2lox"
   ]
 }
+
+the combustion efficiency is used to calculate the real ISP of the engine along with the expansion ratio.
 ```
 ## Propellant Type (creatingspace:propellant_type)
 
