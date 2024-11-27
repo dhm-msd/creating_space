@@ -28,6 +28,7 @@ The adjacentDimensions is derived from graph theory. See the [adjacency matrix](
 it's used in the crafting of rocket engines
 
 exemple : 
+```
 {
   "minExpansionRatio": 2,
   "maxExpansionRatio": 100,
@@ -36,11 +37,13 @@ exemple :
     "creatingspace:lh2lox"
   ]
 }
+```
 
 ## Power Pack Type (creatingspace:power_pack_type)
 it's used in the crafting of rocket engines
 
 exemple : 
+```
 {
   "combustionEfficiency": 0.9,
   "numberOfPumps": 2, # don't do anything right now
@@ -49,7 +52,7 @@ exemple :
     "creatingspace:lh2lox"
   ]
 }
-
+```
 ## Propellant Type (creatingspace:propellant_type)
 
 it's the property of a mix of fuels. Very important, it's the mix of liquids not the liquid in itself.
