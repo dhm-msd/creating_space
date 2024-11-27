@@ -142,46 +142,6 @@ def exit_mach(expansion_ratio, gamma):
     return dichotomie(lambda mach: er_mach(gamma, expansion_ratio, mach), 1, 1000, 0.0001)
 
 
-def main():
-    # that's for the RS-25
-    # that's the propellant
-    M = 59 * 10 ** (-3)  # mass
-    max_isp = 500
-    gamma = 1.3
-    c_p = 4009
-    Pa = 10 ** 5
-    thrust = 200000 * 9.81
-    size = 3000 / 1000  # m3 volume of the chamber
-    print("A*:" + str(get_a_throat(size)))
-    Er = np.linspace(2.01, 300, 1000)
-    Machs = np.array([exit_mach(er, gamma) for er in Er])
-    print("T :" + str(get_chamber_temperature(max_isp, c_p)))
-    Ve = get_exhaust_velocity(Machs, R / M,
-                              get_exhaust_temperature(Machs, c_p,
-                                                      gamma, max_isp),
-                              gamma)
-    Isps = Ve / 9.81
-    q = thrust / Isps
-    Pc = get_chamber_pressure(M, c_p, gamma, max_isp, q, size)
-    Pe = Pc * (1 + (gamma - 1) / 2 * Machs ** 2) ** (-gamma / (gamma - 1))
-    fig, axs = plt.subplots(2, 2)
-    axs[0, 0].plot(Er, Isps, label="isp")
-    axs[0, 0].legend()
-    axs[0, 1].plot(Er, Machs, label="machs")
-    axs[0, 1].legend()
-    axs[1, 1].plot(Er, Pc / Pa, label="normalized chamber pressure", color='red')
-    axs[1, 1].plot(Er, Pe / Pa, label="normalized exhaust pressure", color='green')
-    axs[1, 1].legend()
-
-    axs[1, 0].plot(Er, get_exhaust_temperature(Machs, c_p,
-                                               gamma, max_isp),
-                   label="exhaust temperature")
-    axs[1, 0].plot(Er, np.full_like(Er, get_chamber_temperature(max_isp, c_p)),
-                   label="chamber temperature")
-    axs[1, 0].legend()
-    plt.show()
-
-
 def get_chamber_pressure(M, c_p_eau, h_gamma, h_max_isp, q, size):
     return (q * (get_chamber_temperature(h_max_isp, c_p_eau) * R / M / h_gamma) ** 0.5 / get_a_throat(size)
             * ((h_gamma + 1) / 2) ** ((h_gamma + 1) / (2 * (h_gamma - 1))))
@@ -194,7 +154,6 @@ def get_exhaust_velocity(mach, Rs, Tes, h_gamma):
 def get_exhaust_temperature(mach, c_p_eau, h_gamma, h_max_isp):
     return (1 + (h_gamma - 1) / 2 * mach ** 2) ** (-1) * get_chamber_temperature(h_max_isp, c_p_eau)
 
-#main()
 
 
 def calculate(max_isp, chamber_temperature, mid_efficiency_Er):
@@ -214,3 +173,8 @@ def calculate(max_isp, chamber_temperature, mid_efficiency_Er):
 calculate(500, 3000, 2)
 
 ```
+
+using the calculate fonction will print the values for maxIsp, Cp, gamma and M that correspond to the three entry parameters. 
+- the maximum Isp
+- the maximum chamber temperature (temperature reached when combustion efficency is 100%)
+- the "mid_efficency_Er" the expansion ratio needed to reach 50% of the ISP permited by the combustion efficency.
