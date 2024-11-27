@@ -80,6 +80,8 @@ The max ISP is the maximum ISP atanable with this propellant, it's also used to 
 
 The Cp is the thermal capacity of the burned mix, it' used to calculated the temperature in the combustion chamber.
 
-The gamma is used .
+The gamma is what determine how much of an expansion ratio you need to attain the max isp.
 
 The M is the mean molecular mass of the burned mix in g/mol.
+
+Has those values are not trival to ballance I suggest you use this python script to generate these values for you : 
