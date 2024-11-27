@@ -76,7 +76,7 @@ it's the property of a mix of fuels. Very important, it's the mix of liquids not
 
 The propellant ratio is used to caculate the ratio of consumption of fuels. The resource location point to a fluid tag, not a fluid. The number is normalised at reading time, so for this example it will be converted to 0.66 for liquid oxygen and 0.33 for liquid methane.
 
-The max ISP is the maximum ISP atanable with this propellant, it's also used to calculate the temperature in the combustion chamber : it's equivalent to the enregy density of the mix.
+The max ISP is the maximum ISP atanable with this propellant, it's also used to calculate the temperature in the combustion chamber : it's equivalent to the energy density of the mix.
 
 The Cp is the thermal capacity of the burned mix, it' used to calculated the temperature in the combustion chamber.
 
