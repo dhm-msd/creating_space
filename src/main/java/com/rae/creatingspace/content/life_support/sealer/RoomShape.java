@@ -6,12 +6,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class RoomShape {
     ArrayList<AABB> listOfBox;
@@ -20,6 +22,9 @@ public class RoomShape {
     float yRot;
     float zRot;
     int volume;
+    // cached encapsulating box, invalidated whenever the list is modified through this class
+    private AABB cachedBounds;
+    private boolean boundsValid;
     static Codec<List<AABB>> LIST_CODEC = Codec.list(
             RecordCodecBuilder.create(
                     instance ->
@@ -48,6 +53,28 @@ public class RoomShape {
         this.closed = closed;
     }
 
+    /**
+     * Takes ownership of {@code listOfBox} (no defensive copy). The caller must not touch the list afterwards.
+     */
+    static RoomShape adopt(ArrayList<AABB> listOfBox, int volume) {
+        return new RoomShape(volume, listOfBox);
+    }
+
+    private RoomShape(int volume, ArrayList<AABB> ownedList) {
+        this.listOfBox = ownedList;
+        this.volume = volume;
+    }
+
+    /**
+     * A published shape is never modified: {@code RoomAtmosphere.searchTopology} builds a new list and a new
+     * shape on every rebuild and only sets {@code closed} before publishing. Entity-data packets are encoded
+     * later on a Netty thread, and sharing an immutable shape needs neither a lock nor a copy per sync.
+     * Do not call the mutators (add/remove/...) on a shape that has already been set on the entity.
+     */
+    public RoomShape copy() {
+        return this;
+    }
+
     public static RoomShape fromNbt(CompoundTag nbt) {
 
         return new RoomShape(LIST_CODEC.decode(NbtOps.INSTANCE, nbt.get("listOfBox")).result().orElseThrow().getFirst(), nbt.getInt("volume"), nbt.getBoolean("closed"));
@@ -71,36 +98,34 @@ public class RoomShape {
         add(firstBlock);
     }
 
-    //TODO use AABB::minmax
+    /**
+     * @return the box enclosing every box of the room, or null if the room is empty. Cached.
+     */
     public AABB getEncapsulatingBox() {
-        Double minX = null;
-        Double minY = null;
-        Double minZ = null;
-        Double maxX = null;
-        Double maxY = null;
-        Double maxZ = null;
-        for (AABB aabb : listOfBox) {
-            if (minX == null || minX > aabb.minX) {
-                minX = aabb.minX;
-            }
-            if (minY == null || minY > aabb.minY) {
-                minY = aabb.minY;
-            }
-            if (minZ == null || minZ > aabb.minZ) {
-                minZ = aabb.minZ;
-            }
-            if (maxX == null || maxX < aabb.maxX) {
-                maxX = aabb.maxX;
-            }
-            if (maxY == null || maxY < aabb.maxY) {
-                maxY = aabb.maxY;
-            }
-            if (maxZ == null || maxZ < aabb.maxZ) {
-                maxZ = aabb.maxZ;
-            }
+        if (!boundsValid) {
+            cachedBounds = computeBounds();
+            boundsValid = true;
         }
+        return cachedBounds;
+    }
+
+    private AABB computeBounds() {
         if (listOfBox.isEmpty()) {
             return null;
+        }
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
+        for (AABB aabb : listOfBox) {
+            if (aabb.minX < minX) minX = aabb.minX;
+            if (aabb.minY < minY) minY = aabb.minY;
+            if (aabb.minZ < minZ) minZ = aabb.minZ;
+            if (aabb.maxX > maxX) maxX = aabb.maxX;
+            if (aabb.maxY > maxY) maxY = aabb.maxY;
+            if (aabb.maxZ > maxZ) maxZ = aabb.maxZ;
         }
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
@@ -118,10 +143,14 @@ public class RoomShape {
     }
     private void add(List<AABB> aabbs) {
         listOfBox.addAll(aabbs);
+        boundsValid = false;
         for (AABB aabb : aabbs) {
             volume += (int) getVolume(aabb);
         }
     }
+    /**
+     * Kept for compatibility. Prefer {@link #getLivingInside(Level)}.
+     */
     public List<Entity> getEntitiesInside(Level level) {
         ArrayList<Entity> entities = new ArrayList<>();
         for (AABB box :
@@ -129,6 +158,32 @@ public class RoomShape {
             entities.addAll(level.getEntities(null, box));
         }
         return entities.stream().distinct().toList();
+    }
+
+    /**
+     * Living entities whose bounding box touches the room. Uses one typed query on the room's
+     * bounding box instead of one all-entity query per box, then filters against the boxes.
+     */
+    public List<LivingEntity> getLivingInside(Level level) {
+        AABB bounds = getEncapsulatingBox();
+        if (bounds == null) {
+            return List.of();
+        }
+        List<LivingEntity> candidates = level.getEntitiesOfClass(LivingEntity.class, bounds);
+        if (candidates.isEmpty()) {
+            return candidates;
+        }
+        List<LivingEntity> inside = new ArrayList<>(candidates.size());
+        for (LivingEntity entity : candidates) {
+            AABB entityBox = entity.getBoundingBox();
+            for (AABB box : listOfBox) {
+                if (box.intersects(entityBox)) {
+                    inside.add(entity);
+                    break;
+                }
+            }
+        }
+        return inside;
     }
 
     public void calculateVolume() {
@@ -157,7 +212,7 @@ public class RoomShape {
 
     public void remove(BlockPos pos) {
         listOfBox.removeIf(aabb -> aabb.contains(Vec3.atCenterOf(pos)));
-
+        boundsValid = false;
     }
 
     public void remove(AABB toRemove) {
@@ -166,6 +221,7 @@ public class RoomShape {
             toRemoveList.addAll(carve(toRemove, aabb));
         }
         listOfBox = toRemoveList;
+        boundsValid = false;
     }
 
     public void setClosed() {
@@ -196,5 +252,18 @@ public class RoomShape {
         aabbs.add(new AABB(iCarver.minX, iCarver.maxY, iCarver.minZ, iCarver.maxX, carved.maxY, iCarver.maxZ));
 
         return aabbs.stream().filter(aabb -> aabb.getSize() != 0).toList();
+    }
+
+    // Value equality lets SynchedEntityData skip re-sending an unchanged shape to every tracking player.
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RoomShape other)) return false;
+        return volume == other.volume && closed == other.closed && listOfBox.equals(other.listOfBox);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(listOfBox, volume, closed);
     }
 }
